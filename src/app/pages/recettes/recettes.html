@@ -107,11 +107,10 @@
             @for (ing of form().ingredients; track $index; let i = $index) {
               <div class="ingredient-row">
                 <select class="input ingredient-row__select"
-                        [value]="ing.ingredientId"
                         (change)="updateIngredientLine(i, 'ingredientId', $any($event.target).value)">
-                  <option value="">— Choisir —</option>
+                  <option value="" [selected]="!ing.ingredientId">— Choisir —</option>
                   @for (opt of ingredients(); track opt.id) {
-                    <option [value]="opt.id">{{ opt.nom }}</option>
+                    <option [value]="opt.id" [selected]="opt.id === ing.ingredientId">{{ opt.nom }}</option>
                   }
                 </select>
                 <div class="ingredient-row__qty-wrap">
