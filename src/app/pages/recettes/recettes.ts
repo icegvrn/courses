@@ -24,7 +24,7 @@ export class RecettesComponent {
   dataService = inject(DataService);
   private toastService = inject(ToastService);
 
-  recettes = this.dataService.recettes;
+  recettes = this.dataService.recettesSorted;
   ingredients = this.dataService.ingredients;
 
   search = signal('');

@@ -17,6 +17,11 @@ export class DataService {
   recettes    = signal<Recette[]>(this.load(KEYS.recettes, DEMO_RECETTES));
   planning    = signal<PlanningItem[]>(this.load(KEYS.planning, []));
 
+  // Recettes triées alphabétiquement — utilisé par toutes les pages
+  recettesSorted = computed<Recette[]>(() =>
+    [...this.recettes()].sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
+  );
+
   // ── Computed ────────────────────────────────────────────────
   courses = computed<CourseItem[]>(() => this.genererCourses());
 

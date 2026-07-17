@@ -25,7 +25,7 @@ export class PlanningComponent {
 
   // Toutes les recettes avec leur quantité courante (0 par défaut)
   lines = computed<RecetteLine[]>(() =>
-    this.dataService.recettes().map(r => {
+    this.dataService.recettesSorted().map(r => {
       const planItem = this.dataService.planning().find(p => p.recetteId === r.id);
       return {
         recetteId: r.id,
