@@ -1,0 +1,175 @@
+<div class="page ingredients">
+  <!-- Header -->
+  <div class="page__header">
+    <div class="ingredients__header-top">
+      <div>
+        <h1>Ingrédients</h1>
+        <p>{{ ingredients().length }} ingrédient{{ ingredients().length !== 1 ? 's' : '' }} dans le référentiel</p>
+      </div>
+      <button class="btn btn--primary" (click)="openCreate()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Nouvel ingrédient
+      </button>
+    </div>
+
+    <!-- Filters -->
+    @if (ingredients().length > 0) {
+      <div class="ingredients__filters">
+        <div class="search-input-wrap">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="input search-input" type="text" placeholder="Rechercher…"
+                 [value]="search()" (input)="search.set($any($event.target).value)">
+        </div>
+        <select class="input input--filter" [value]="filterCat()" (change)="filterCat.set($any($event.target).value)">
+          <option value="">Toutes catégories</option>
+          @for (cat of allCats(); track cat) {
+            @if (cat) { <option [value]="cat">{{ cat }}</option> }
+          }
+        </select>
+      </div>
+    }
+  </div>
+
+  <!-- Empty state -->
+  @if (ingredients().length === 0) {
+    <div class="empty-state">
+      <div class="empty-state__icon">🥕</div>
+      <div class="empty-state__title">Aucun ingrédient</div>
+      <div class="empty-state__text">Créez votre référentiel d'ingrédients pour les utiliser dans vos recettes.</div>
+      <button class="btn btn--primary" (click)="openCreate()">Ajouter un ingrédient</button>
+    </div>
+  } @else if (filtered().length === 0) {
+    <div class="empty-state">
+      <div class="empty-state__icon">🔍</div>
+      <div class="empty-state__title">Aucun résultat</div>
+      <div class="empty-state__text">Aucun ingrédient ne correspond aux filtres appliqués.</div>
+    </div>
+  } @else {
+    <!-- Table -->
+    <div class="ing-table-wrap card">
+      <table class="ing-table">
+        <thead>
+          <tr>
+            <th class="ing-table__th ing-table__th--name">
+              <button class="ing-table__sort" (click)="sortField.set('nom')" [class.ing-table__sort--active]="sortField() === 'nom'">
+                Ingrédient
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+            </th>
+            <th class="ing-table__th">Unité</th>
+            <th class="ing-table__th">
+              <button class="ing-table__sort" (click)="sortField.set('categorie')" [class.ing-table__sort--active]="sortField() === 'categorie'">
+                Catégorie
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+            </th>
+            <th class="ing-table__th ing-table__th--usage">Utilisé dans</th>
+            <th class="ing-table__th ing-table__th--actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (ing of filtered(); track ing.id) {
+            <tr class="ing-table__row">
+              <td class="ing-table__td ing-table__name">{{ ing.nom }}</td>
+              <td class="ing-table__td">
+                <span class="badge badge--muted">{{ ing.unite }}</span>
+              </td>
+              <td class="ing-table__td">
+                @if (ing.categorie) {
+                  <span class="badge badge--secondary">{{ ing.categorie }}</span>
+                } @else {
+                  <span class="ing-table__none">—</span>
+                }
+              </td>
+              <td class="ing-table__td">
+                @if (usageCount(ing.id) > 0) {
+                  <span class="badge badge--primary">{{ usageCount(ing.id) }} recette{{ usageCount(ing.id) !== 1 ? 's' : '' }}</span>
+                } @else {
+                  <span class="ing-table__none">Non utilisé</span>
+                }
+              </td>
+              <td class="ing-table__td ing-table__td--actions">
+                <button class="btn btn--icon btn--ghost ing-table__edit" (click)="openEdit(ing)" aria-label="Modifier">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button class="btn btn--icon btn--ghost ing-table__del" (click)="confirmDelete(ing.id)" aria-label="Supprimer">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<!-- Modal ingrédient -->
+@if (showModal()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2>{{ form().id ? 'Modifier l\'ingrédient' : 'Nouvel ingrédient' }}</h2>
+        <button class="btn btn--icon btn--ghost" (click)="closeModal()" aria-label="Fermer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="modal__body">
+        <div class="form-group">
+          <label>Nom *</label>
+          <input class="input" type="text" placeholder="Ex: Tomates cerises"
+                 [value]="form().nom" (input)="form.update(f => ({...f, nom: $any($event.target).value}))">
+        </div>
+
+        <div class="modal__row">
+          <div class="form-group" style="flex: 1">
+            <label>Unité *</label>
+            <input class="input" type="text" placeholder="Ex: g, pièce(s)…" list="unites-list"
+                   [value]="form().unite" (input)="form.update(f => ({...f, unite: $any($event.target).value}))">
+            <datalist id="unites-list">
+              @for (u of unites; track u) { <option [value]="u"></option> }
+            </datalist>
+          </div>
+
+          <div class="form-group" style="flex: 1">
+            <label>Catégorie</label>
+            <select class="input" [value]="form().categorie" (change)="form.update(f => ({...f, categorie: $any($event.target).value}))">
+              <option value="">— Aucune —</option>
+              @for (cat of categories; track cat) {
+                <option [value]="cat">{{ cat }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal__footer">
+        @if (form().id) {
+          <button class="btn btn--danger btn--sm" (click)="confirmDelete(form().id!)">Supprimer</button>
+          <div style="flex:1"></div>
+        }
+        <button class="btn btn--ghost" (click)="closeModal()">Annuler</button>
+        <button class="btn btn--primary" (click)="save()">
+          {{ form().id ? 'Enregistrer' : 'Créer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Delete confirm -->
+@if (showDeleteConfirm()) {
+  <div class="modal-backdrop" (click)="cancelDelete()">
+    <div class="modal modal--sm" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2>Supprimer l'ingrédient ?</h2>
+      </div>
+      <p class="modal__confirm-text">Cet ingrédient sera retiré du référentiel et potentiellement des recettes.</p>
+      <div class="modal__footer">
+        <button class="btn btn--ghost" (click)="cancelDelete()">Annuler</button>
+        <button class="btn btn--danger" (click)="executeDelete()">Supprimer</button>
+      </div>
+    </div>
+  </div>
+}

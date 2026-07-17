@@ -1,0 +1,97 @@
+<div class="page courses">
+  <!-- Header -->
+  <div class="page__header">
+    <div class="courses__header-top">
+      <div>
+        <h1>Ma liste de courses</h1>
+        <p>Générée depuis votre planning</p>
+      </div>
+      <div class="courses__header-actions">
+        @if (totalCount() > 0) {
+          <button class="btn btn--ghost btn--sm" (click)="resetChecked()" title="Décocher tout">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0"/><path d="M3 12h18"/></svg>
+            Réinitialiser
+          </button>
+          <button class="btn btn--secondary btn--sm" (click)="exportListe()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exporter
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    @if (totalCount() > 0) {
+      <div class="courses__progress">
+        <div class="courses__progress-bar">
+          <div class="courses__progress-fill"
+               [style.width.%]="totalCount() > 0 ? (checkedCount() / totalCount()) * 100 : 0">
+          </div>
+        </div>
+        <span class="courses__progress-label">
+          {{ checkedCount() }}/{{ totalCount() }} articles
+          @if (checkedCount() === totalCount() && totalCount() > 0) {
+            🎉
+          }
+        </span>
+      </div>
+    }
+  </div>
+
+  <!-- Empty state (no planning) -->
+  @if (totalCount() === 0 && dataService.planning().length === 0) {
+    <div class="empty-state">
+      <div class="empty-state__icon">📅</div>
+      <div class="empty-state__title">Aucun repas planifié</div>
+      <div class="empty-state__text">Configurez votre planning hebdomadaire pour générer votre liste de courses.</div>
+      <button class="btn btn--primary" (click)="goToPlanning()">Aller au planning</button>
+    </div>
+  } @else if (totalCount() === 0) {
+    <div class="empty-state">
+      <div class="empty-state__icon">🛒</div>
+      <div class="empty-state__title">Liste vide</div>
+      <div class="empty-state__text">Tous vos repas ont 0 personnes. Ajustez les quantités dans le planning.</div>
+      <button class="btn btn--primary" (click)="goToPlanning()">Modifier le planning</button>
+    </div>
+  } @else {
+    <!-- Grouped list -->
+    <div class="courses__groups">
+      @for (group of grouped(); track group.categorie) {
+        <div class="courses__group">
+          <div class="courses__group-header">
+            <span class="courses__group-title">{{ group.categorie }}</span>
+            <span class="badge badge--muted">{{ group.items.length }}</span>
+          </div>
+
+          <div class="courses__items">
+            @for (item of group.items; track item.ingredient.id) {
+              <label class="course-item" [class.course-item--checked]="item.checked" (click)="toggle(item.ingredient.id)">
+                <div class="checkbox">
+                  <input type="checkbox" [checked]="item.checked" (click)="$event.stopPropagation()" (change)="toggle(item.ingredient.id)">
+                </div>
+                <div class="course-item__info">
+                  <span class="course-item__name">{{ item.ingredient.nom }}</span>
+                  @if (item.recettes.length > 0) {
+                    <span class="course-item__source">{{ item.recettes.join(' · ') }}</span>
+                  }
+                </div>
+                <div class="course-item__qty">
+                  <span class="course-item__amount">{{ formatQty(item.quantiteTotale) }}</span>
+                  <span class="course-item__unit">{{ item.ingredient.unite }}</span>
+                </div>
+              </label>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Completion banner -->
+    @if (checkedCount() === totalCount() && totalCount() > 0) {
+      <div class="courses__done">
+        <span class="courses__done-icon">🎉</span>
+        <span>Tout est dans le panier !</span>
+      </div>
+    }
+  }
+</div>

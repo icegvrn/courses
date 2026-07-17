@@ -1,0 +1,170 @@
+<div class="page recettes">
+  <!-- Header -->
+  <div class="page__header">
+    <div class="recettes__header-top">
+      <div>
+        <h1>Recettes</h1>
+        <p>{{ recettes().length }} recette{{ recettes().length !== 1 ? 's' : '' }} enregistrée{{ recettes().length !== 1 ? 's' : '' }}</p>
+      </div>
+      <button class="btn btn--primary" (click)="openCreate()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Nouvelle recette
+      </button>
+    </div>
+
+    <!-- Search -->
+    @if (recettes().length > 0) {
+      <div class="recettes__search">
+        <div class="search-input-wrap">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="input search-input" type="text" placeholder="Rechercher une recette…"
+                 [value]="search()" (input)="search.set($any($event.target).value)">
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Empty state -->
+  @if (recettes().length === 0) {
+    <div class="empty-state">
+      <div class="empty-state__icon">🍽️</div>
+      <div class="empty-state__title">Aucune recette</div>
+      <div class="empty-state__text">Créez vos premières recettes pour commencer à planifier vos repas.</div>
+      <button class="btn btn--primary" (click)="openCreate()">Créer ma première recette</button>
+    </div>
+  } @else if (filteredRecettes().length === 0) {
+    <div class="empty-state">
+      <div class="empty-state__icon">🔍</div>
+      <div class="empty-state__title">Aucun résultat</div>
+      <div class="empty-state__text">Aucune recette ne correspond à "{{ search() }}"</div>
+    </div>
+  } @else {
+    <!-- Grid -->
+    <div class="recettes__grid">
+      @for (r of filteredRecettes(); track r.id) {
+        <div class="recette-card card" (click)="openEdit(r)">
+          <div class="recette-card__emoji">{{ r.emoji ?? '🍽️' }}</div>
+          <div class="recette-card__body">
+            <div class="recette-card__name">{{ r.nom }}</div>
+            @if (r.description) {
+              <div class="recette-card__desc">{{ r.description }}</div>
+            }
+            <div class="recette-card__meta">
+              <span class="badge badge--primary">{{ r.ingredients.length }} ingrédient{{ r.ingredients.length !== 1 ? 's' : '' }}</span>
+            </div>
+            <div class="recette-card__ingredients">
+              @for (ri of r.ingredients.slice(0, 3); track ri.ingredientId) {
+                <span class="recette-card__ing-chip">{{ getIngredientNom(ri.ingredientId) }}</span>
+              }
+              @if (r.ingredients.length > 3) {
+                <span class="recette-card__ing-more">+{{ r.ingredients.length - 3 }}</span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- Modal Recette -->
+@if (showModal()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2>{{ form().id ? 'Modifier la recette' : 'Nouvelle recette' }}</h2>
+        <button class="btn btn--icon btn--ghost" (click)="closeModal()" aria-label="Fermer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="modal__body">
+        <!-- Nom + Emoji -->
+        <div class="modal__row">
+          <div class="form-group" style="width: 64px; flex-shrink: 0">
+            <label>Icône</label>
+            <input class="input emoji-input" type="text" maxlength="2"
+                   [value]="form().emoji" (input)="form.update(f => ({...f, emoji: $any($event.target).value}))">
+          </div>
+          <div class="form-group" style="flex: 1">
+            <label>Nom de la recette *</label>
+            <input class="input" type="text" placeholder="Ex: Poulet rôti"
+                   [value]="form().nom" (input)="form.update(f => ({...f, nom: $any($event.target).value}))">
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label>Description</label>
+          <textarea class="input" rows="2" placeholder="Décrivez la recette (optionnel)"
+                    [value]="form().description" (input)="form.update(f => ({...f, description: $any($event.target).value}))"></textarea>
+        </div>
+
+        <!-- Ingrédients -->
+        <div class="form-group">
+          <label>Ingrédients (quantités par personne)</label>
+          <div class="ingredients-list">
+            @for (ing of form().ingredients; track $index; let i = $index) {
+              <div class="ingredient-row">
+                <select class="input ingredient-row__select"
+                        [value]="ing.ingredientId"
+                        (change)="updateIngredientLine(i, 'ingredientId', $any($event.target).value)">
+                  <option value="">— Choisir —</option>
+                  @for (opt of ingredients(); track opt.id) {
+                    <option [value]="opt.id">{{ opt.nom }}</option>
+                  }
+                </select>
+                <div class="ingredient-row__qty-wrap">
+                  <input class="input ingredient-row__qty" type="number" min="0" step="0.1"
+                         placeholder="Qté"
+                         [value]="ing.quantiteParPersonne ?? ''"
+                         (input)="updateIngredientLine(i, 'quantiteParPersonne', +$any($event.target).value)">
+                  @if (ing.ingredientId) {
+                    <span class="ingredient-row__unit">{{ getIngredientUnite(ing.ingredientId) }}</span>
+                  }
+                </div>
+                <button class="btn btn--icon btn--ghost ingredient-row__del"
+                        (click)="removeIngredientLine(i)"
+                        [disabled]="form().ingredients.length === 1"
+                        aria-label="Supprimer">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              </div>
+            }
+          </div>
+          <button class="btn btn--ghost btn--sm" (click)="addIngredientLine()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Ajouter un ingrédient
+          </button>
+        </div>
+      </div>
+
+      <div class="modal__footer">
+        @if (form().id) {
+          <button class="btn btn--danger btn--sm" (click)="confirmDelete(form().id!)">Supprimer</button>
+          <div style="flex:1"></div>
+        }
+        <button class="btn btn--ghost" (click)="closeModal()">Annuler</button>
+        <button class="btn btn--primary" (click)="save()">
+          {{ form().id ? 'Enregistrer' : 'Créer la recette' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Delete confirm modal -->
+@if (showDeleteConfirm()) {
+  <div class="modal-backdrop" (click)="cancelDelete()">
+    <div class="modal modal--sm" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2>Supprimer la recette ?</h2>
+      </div>
+      <p class="modal__confirm-text">Cette action est irréversible. La recette sera retirée du planning.</p>
+      <div class="modal__footer">
+        <button class="btn btn--ghost" (click)="cancelDelete()">Annuler</button>
+        <button class="btn btn--danger" (click)="executeDelete()">Supprimer définitivement</button>
+      </div>
+    </div>
+  </div>
+}
