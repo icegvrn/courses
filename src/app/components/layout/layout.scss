@@ -18,10 +18,16 @@
   &__bg {
     position: absolute;
     inset: 0;
-    background-image: url('/img/header.png');
-    background-size: 120%;
-    background-position: center -20px;
-    filter: grayscale(100%) brightness(0.85) contrast(1.1);
+    overflow: hidden;
+
+    img {
+      width: 120%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center -20px;
+      filter: grayscale(100%) brightness(0.85) contrast(1.1);
+      margin-left: -10%;
+    }
   }
 
   // Conteneur limité à 1344px, centré, avec fondu gauche/droit
